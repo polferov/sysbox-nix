@@ -1,4 +1,4 @@
-# nix-sysbox
+# sysbox-nix
 
 Nix flake for [Sysbox](https://github.com/nestybox/sysbox) — a rootful OCI container runtime that runs system containers (containers that can run systemd, Docker, K8s inside).
 
@@ -12,7 +12,7 @@ Not in nixpkgs. Linux only (`x86_64-linux`, `aarch64-linux`).
 
 ```nix
 {
-  inputs.sysbox.url = "github:<you>/nix-sysbox";
+  inputs.sysbox.url = "github:polferov/sysbox-nix";
 
   outputs = { self, nixpkgs, sysbox, ... }: {
     nixosConfigurations.host = nixpkgs.lib.nixosSystem {
@@ -32,7 +32,7 @@ Not in nixpkgs. Linux only (`x86_64-linux`, `aarch64-linux`).
 ### Just the package
 
 ```
-nix build github:<you>/nix-sysbox
+nix build github:polferov/sysbox-nix
 ./result/bin/sysbox-runc --version
 ```
 
