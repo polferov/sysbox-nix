@@ -75,7 +75,7 @@ docker run --runtime=sysbox-runc -it --rm alpine sh -c 'cat /proc/self/uid_map'
 
 ## Troubleshooting
 
-### `fs.inotify.max_user_instances` defined multiple times
+### `boot.kernel.sysctl.*` defined multiple times
 
 ```
 error: The option `boot.kernel.sysctl."fs.inotify.max_user_instances"' is defined multiple times while it's expected to be unique.
@@ -83,13 +83,34 @@ error: The option `boot.kernel.sysctl."fs.inotify.max_user_instances"' is define
 - In `<sysbox>/modules/sysbox.nix': 1048576
 ```
 
-Both definitions use `lib.mkDefault`, so they collide at equal priority on a unique-typed option. Resolve in your own config:
+Sysbox sets several sysctls with `lib.mkDefault`. When nixpkgs (or another module) sets the same key at `lib.mkDefault` with a different value, the module system can't pick a winner and errors out. Override in your own config with `lib.mkForce`.
+
+Known conflicts with current nixpkgs (`config/sysctl.nix`):
+
+| Key | nixpkgs `mkDefault` | sysbox `mkDefault` |
+|---|---|---|
+| `fs.inotify.max_user_instances` | `524288` | `1048576` |
+| `fs.inotify.max_user_watches` | `524288` | `1048576` |
+
+Drop-in fix — paste into any NixOS module in your config:
 
 ```nix
-boot.kernel.sysctl."fs.inotify.max_user_instances" = lib.mkForce 1048576;
+{ lib, ... }:
+{
+  boot.kernel.sysctl = {
+    "fs.inotify.max_user_instances" = lib.mkForce 1048576;
+    "fs.inotify.max_user_watches"   = lib.mkForce 1048576;
+    # Uncomment if another module also sets these at mkDefault:
+    # "fs.inotify.max_queued_events"      = lib.mkForce 1048576;
+    # "kernel.unprivileged_userns_clone"  = lib.mkForce 1;
+    # "kernel.keys.maxkeys"               = lib.mkForce 20000;
+    # "kernel.keys.maxbytes"              = lib.mkForce 1400000;
+    # "kernel.pid_max"                    = lib.mkForce 4194304;
+  };
+}
 ```
 
-Pick `1048576` (sysbox headroom) or `524288` (nixpkgs default) — either works. The same pattern applies if another module sets `fs.inotify.max_user_watches` or `fs.inotify.max_queued_events` at `mkDefault`.
+Values match what `modules/sysbox.nix` requests. Lower them if you have a reason — sysbox just needs headroom, not these exact numbers.
 
 ## Why a fork-and-flake instead of upstream
 
