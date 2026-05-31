@@ -73,6 +73,24 @@ docker run --runtime=sysbox-runc -it --rm alpine sh -c 'cat /proc/self/uid_map'
 # Expect: non-identity mapping (e.g. "0 100000 65536"), proving userns isolation.
 ```
 
+## Troubleshooting
+
+### `fs.inotify.max_user_instances` defined multiple times
+
+```
+error: The option `boot.kernel.sysctl."fs.inotify.max_user_instances"' is defined multiple times while it's expected to be unique.
+- In `<nixpkgs>/nixos/modules/config/sysctl.nix': 524288
+- In `<sysbox>/modules/sysbox.nix': 1048576
+```
+
+Both definitions use `lib.mkDefault`, so they collide at equal priority on a unique-typed option. Resolve in your own config:
+
+```nix
+boot.kernel.sysctl."fs.inotify.max_user_instances" = lib.mkForce 1048576;
+```
+
+Pick `1048576` (sysbox headroom) or `524288` (nixpkgs default) — either works. The same pattern applies if another module sets `fs.inotify.max_user_watches` or `fs.inotify.max_queued_events` at `mkDefault`.
+
 ## Why a fork-and-flake instead of upstream
 
 Upstream's `make sysbox` shells out to Docker to compile inside a container. That's incompatible with Nix's pure-build model. This flake calls `go build` per component directly. Build tags hardcode `seccomp apparmor idmapped_mnt` (kernel ≥ 5.12 assumed); static linking is dropped in favor of Nix's runtime closure.
