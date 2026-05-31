@@ -64,6 +64,8 @@ in
       description = "sysbox-mgr (part of the Sysbox container runtime)";
       partOf = [ "sysbox.service" ];
       unitConfig.StartLimitIntervalSec = 0;
+      # sysbox-mgr preflight shells out to rsync (and fsck/iptables) — keep them on PATH.
+      path = [ pkgs.rsync pkgs.util-linux pkgs.e2fsprogs pkgs.iptables ];
       serviceConfig = {
         Type = "notify";
         ExecStart = "${cfg.package}/bin/sysbox-mgr";
