@@ -63,12 +63,12 @@ in
     systemd.services.sysbox-mgr = {
       description = "sysbox-mgr (part of the Sysbox container runtime)";
       partOf = [ "sysbox.service" ];
+      unitConfig.StartLimitIntervalSec = 0;
       serviceConfig = {
         Type = "notify";
         ExecStart = "${cfg.package}/bin/sysbox-mgr";
         TimeoutStartSec = 45;
         TimeoutStopSec = 90;
-        StartLimitInterval = 0;
         NotifyAccess = "main";
         OOMScoreAdjust = -500;
         LimitNOFILE = "infinity";
@@ -80,12 +80,12 @@ in
       description = "sysbox-fs (part of the Sysbox container runtime)";
       partOf = [ "sysbox.service" ];
       after = [ "sysbox-mgr.service" ];
+      unitConfig.StartLimitIntervalSec = 0;
       serviceConfig = {
         Type = "notify";
         ExecStart = "${cfg.package}/bin/sysbox-fs";
         TimeoutStartSec = 10;
         TimeoutStopSec = 10;
-        StartLimitInterval = 0;
         NotifyAccess = "main";
         OOMScoreAdjust = -500;
         LimitNOFILE = "infinity";
